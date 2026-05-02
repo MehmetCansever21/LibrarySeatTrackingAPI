@@ -125,6 +125,7 @@ Controllers/
  BlockRecordsController.cs
  IssueReportsController.cs
  LocationAreasController.cs
+ NotificationsController.cs
  QrCodeRecordsController.cs
  QueueEntriesController.cs
  ReservationsController.cs
