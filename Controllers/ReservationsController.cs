@@ -88,4 +88,25 @@ public class ReservationsController : ControllerBase // API controller temel sı
 
             return Ok(result); // İşlem başarılıysa 200 OK cevabı döner
         }
+
+        [Authorize(Roles = "Student")] // Bu endpoint'e sadece Student rolündeki kullanıcılar erişebilir
+[HttpPost("renew")] // POST api/reservations/renew endpointini oluşturur
+public async Task<IActionResult> Renew(RenewReservationDto request) // Öğrencinin aktif rezervasyonunu QR kod ile yeniler
+{
+    var userIdText = User.FindFirstValue(ClaimTypes.NameIdentifier); // Token içinden kullanıcı Id bilgisini okur
+
+    if (!int.TryParse(userIdText, out var userId)) // Kullanıcı Id sayıya çevrilemezse
+    {
+        return Unauthorized(); // 401 Unauthorized döner
+    }
+
+    var result = await _reservationService.RenewAsync(request, userId); // Yenileme işlemini service'e gönderir
+
+    if (!result.Success) // İşlem başarısızsa
+    {
+        return BadRequest(result); // 400 Bad Request döner
+    }
+
+    return Ok(result); // İşlem başarılıysa 200 OK döner
+}
 }
