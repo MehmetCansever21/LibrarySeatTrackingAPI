@@ -5,4 +5,6 @@ namespace LibrarySeatTrackingAPI.Application.Interfaces; // Bu dosyanın Applica
 public interface IAuthService
 {
     Task<ApiResponseDto<LoginResponseDto>> LoginAsync(LoginRequestDto request); // Kullanıcının giriş yapmasını sağlayacak metot
+    Task<ApiResponseDto<LoginResponseDto>> RefreshTokenAsync(RefreshTokenRequestDto request); // Refresh token ile yeni access token üretir
+    Task<ApiResponseDto<string>> LogoutAsync(RefreshTokenRequestDto request); // Refresh tokenı iptal ederek çıkış yapar
 }

@@ -19,6 +19,11 @@ public class Reservation
     public DateTime EndTime { get; set; } // Masa kullanımının bitiş zamanı
 
     public ReservationStatus Status { get; set; } = ReservationStatus.Active; // Rezervasyonun mevcut durumu
+    public string? StaffNote { get; set; } // Görevli veya admin tarafından rezervasyon sonlandırılırsa açıklama notunu tutar
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // Rezervasyon kaydının oluşturulma tarihi
+
+    public int RenewCount { get; set; } = 0; // Kullanıcının oturumu kaç kez yenilediğini tutar
+
+    public DateTime LastRenewedAt { get; set; } = DateTime.UtcNow; // Oturumun en son ne zaman yenilendiğini tutar
 }

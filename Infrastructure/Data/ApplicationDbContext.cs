@@ -27,4 +27,6 @@ public class ApplicationDbContext : DbContext // EF Core veritabanı sınıfım�
     public DbSet<BlockRecord> BlockRecords { get; set; } // BlockRecords tablosunu temsil eder
 
     public DbSet<IssueReport> IssueReports { get; set; } // IssueReports tablosunu temsil eder
+    public DbSet<NotificationLog> NotificationLogs { get; set; } // NotificationLogs tablosunu temsil eder
+    public DbSet<UserDeviceToken> UserDeviceTokens { get; set; } // UserDeviceTokens tablosunu temsil eder
 }

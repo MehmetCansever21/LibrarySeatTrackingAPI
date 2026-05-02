@@ -44,7 +44,7 @@ public class AuthService : IAuthService // AuthService, IAuthService sözleşmes
             return new ApiResponseDto<LoginResponseDto> // Başarısız cevap döner
             {
                 Success = false, // İşlem başarısız
-                Message = "Invalid e-mail or password123456.", // Güvenlik için genel hata mesajı
+                Message = "Invalid e-mail or password.", // Güvenlik için genel hata mesajı
                 Data = null // Veri dönülmez
             };
         }
@@ -101,6 +101,134 @@ public class AuthService : IAuthService // AuthService, IAuthService sözleşmes
         };
     }
 
+
+        public async Task<ApiResponseDto<LoginResponseDto>> RefreshTokenAsync(RefreshTokenRequestDto request) // Refresh token ile yeni access token üretir
+        {
+            var refreshTokenEntity = await _db.RefreshTokens // RefreshTokens tablosundan sorgu başlatır
+                .Include(x => x.User) // Tokenın bağlı olduğu kullanıcıyı da getirir
+                .FirstOrDefaultAsync(x => x.Token == request.RefreshToken); // Gönderilen refresh token değerini veritabanında arar
+
+            if (refreshTokenEntity is null) // Refresh token bulunamazsa
+            {
+                return new ApiResponseDto<LoginResponseDto> // Başarısız cevap döner
+                {
+                    Success = false, // İşlem başarısız
+                    Message = "Invalid refresh token.", // Geçersiz refresh token mesajı
+                    Data = null // Veri dönülmez
+                };
+            }
+
+            if (refreshTokenEntity.IsRevoked) // Refresh token iptal edilmişse
+            {
+                return new ApiResponseDto<LoginResponseDto> // Başarısız cevap döner
+                {
+                    Success = false, // İşlem başarısız
+                    Message = "Refresh token is revoked.", // Token iptal edilmiş mesajı
+                    Data = null // Veri dönülmez
+                };
+            }
+
+            if (refreshTokenEntity.ExpiresAt < DateTime.UtcNow) // Refresh token süresi dolmuşsa
+            {
+                return new ApiResponseDto<LoginResponseDto> // Başarısız cevap döner
+                {
+                    Success = false, // İşlem başarısız
+                    Message = "Refresh token expired.", // Token süresi doldu mesajı
+                    Data = null // Veri dönülmez
+                };
+            }
+
+            if (refreshTokenEntity.User is null || refreshTokenEntity.User.IsBlocked) // Kullanıcı yoksa veya blokeliyse
+            {
+                return new ApiResponseDto<LoginResponseDto> // Başarısız cevap döner
+                {
+                    Success = false, // İşlem başarısız
+                    Message = "User is not allowed.", // Kullanıcıya izin yok mesajı
+                    Data = null // Veri dönülmez
+                };
+            }
+
+            var user = refreshTokenEntity.User; // Tokenın bağlı olduğu kullanıcıyı alır
+
+            var newAccessToken = GenerateAccessToken(user); // Kullanıcı için yeni access token üretir
+
+            var newRefreshToken = GenerateRefreshToken(); // Yeni refresh token üretir
+
+            refreshTokenEntity.IsRevoked = true; // Eski refresh tokenı iptal eder
+
+            var newRefreshTokenEntity = new RefreshToken // Yeni refresh token kaydı oluşturur
+            {
+                Token = newRefreshToken, // Yeni refresh token değeri
+
+                ExpiresAt = DateTime.UtcNow.AddDays(_configuration.GetValue<int>("Jwt:RefreshTokenExpirationDays")), // Yeni refresh token bitiş tarihi
+
+                IsRevoked = false, // Yeni token aktif başlar
+
+                UserId = user.Id // Yeni tokenı kullanıcıya bağlar
+            };
+
+            _db.RefreshTokens.Add(newRefreshTokenEntity); // Yeni refresh tokenı veritabanına eklenmek üzere hazırlar
+
+            await _db.SaveChangesAsync(); // Eski token iptalini ve yeni token kaydını veritabanına kaydeder
+
+            return new ApiResponseDto<LoginResponseDto> // Başarılı cevap döner
+            {
+                Success = true, // İşlem başarılı
+
+                Message = "Token refreshed successfully.", // Başarı mesajı
+
+                Data = new LoginResponseDto // Yeni token bilgilerini döner
+                {
+                    UserId = user.Id, // Kullanıcı Id bilgisi
+
+                    FullName = user.FullName, // Kullanıcı adı soyadı
+
+                    Email = user.Email, // Kullanıcı e-posta adresi
+
+                    Role = user.Role.ToString(), // Kullanıcı rolü
+
+                    AccessToken = newAccessToken, // Yeni access token
+
+                    RefreshToken = newRefreshToken // Yeni refresh token
+                }
+            };
+        }
+        public async Task<ApiResponseDto<string>> LogoutAsync(RefreshTokenRequestDto request) // Refresh tokenı iptal ederek çıkış yapar
+            {
+                var refreshTokenEntity = await _db.RefreshTokens // RefreshTokens tablosundan sorgu başlatır
+                    .FirstOrDefaultAsync(x => x.Token == request.RefreshToken); // Gönderilen refresh tokenı veritabanında arar
+
+                if (refreshTokenEntity is null) // Refresh token bulunamazsa
+                {
+                    return new ApiResponseDto<string> // Başarısız cevap döner
+                    {
+                        Success = false, // İşlem başarısız
+                        Message = "Refresh token not found.", // Token bulunamadı mesajı
+                        Data = null // Veri dönülmez
+                    };
+                }
+
+                if (refreshTokenEntity.IsRevoked) // Refresh token zaten iptal edilmişse
+                {
+                    return new ApiResponseDto<string> // Başarısız cevap döner
+                    {
+                        Success = false, // İşlem başarısız
+                        Message = "Refresh token already revoked.", // Token zaten iptal edilmiş mesajı
+                        Data = null // Veri dönülmez
+                    };
+                }
+
+                refreshTokenEntity.IsRevoked = true; // Refresh tokenı iptal eder
+
+                await _db.SaveChangesAsync(); // Değişikliği veritabanına kaydeder
+
+                return new ApiResponseDto<string> // Başarılı cevap döner
+                {
+                    Success = true, // İşlem başarılı
+                    Message = "Logout successful.", // Çıkış başarılı mesajı
+                    Data = "Refresh token revoked." // İşlem sonucunu açıklar
+                };
+            }
     private string GenerateAccessToken(User user) // Kullanıcı bilgilerine göre JWT access token üretir
     {
         var claims = new List<Claim> // Token içine yazılacak kullanıcı bilgileri

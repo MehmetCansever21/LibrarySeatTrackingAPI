@@ -4,6 +4,7 @@ using LibrarySeatTrackingAPI.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LibrarySeatTrackingAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260430213504_AddStaffNoteToReservation")]
+    partial class AddStaffNoteToReservation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -118,47 +121,6 @@ namespace LibrarySeatTrackingAPI.Migrations
                     b.ToTable("LocationAreas");
                 });
 
-            modelBuilder.Entity("LibrarySeatTrackingAPI.Domain.NotificationLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("ReservationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReservationId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("NotificationLogs");
-                });
-
             modelBuilder.Entity("LibrarySeatTrackingAPI.Domain.QrCodeRecord", b =>
                 {
                     b.Property<int>("Id")
@@ -258,12 +220,6 @@ namespace LibrarySeatTrackingAPI.Migrations
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("LastRenewedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("RenewCount")
-                        .HasColumnType("int");
-
                     b.Property<string>("StaffNote")
                         .HasColumnType("nvarchar(max)");
 
@@ -353,40 +309,6 @@ namespace LibrarySeatTrackingAPI.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("LibrarySeatTrackingAPI.Domain.UserDeviceToken", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DeviceName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastUsedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserDeviceTokens");
-                });
-
             modelBuilder.Entity("LibrarySeatTrackingAPI.Domain.BlockRecord", b =>
                 {
                     b.HasOne("LibrarySeatTrackingAPI.Domain.User", "User")
@@ -413,23 +335,6 @@ namespace LibrarySeatTrackingAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("StudyTable");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("LibrarySeatTrackingAPI.Domain.NotificationLog", b =>
-                {
-                    b.HasOne("LibrarySeatTrackingAPI.Domain.Reservation", "Reservation")
-                        .WithMany()
-                        .HasForeignKey("ReservationId");
-
-                    b.HasOne("LibrarySeatTrackingAPI.Domain.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Reservation");
 
                     b.Navigation("User");
                 });
@@ -503,17 +408,6 @@ namespace LibrarySeatTrackingAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("LocationArea");
-                });
-
-            modelBuilder.Entity("LibrarySeatTrackingAPI.Domain.UserDeviceToken", b =>
-                {
-                    b.HasOne("LibrarySeatTrackingAPI.Domain.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }
