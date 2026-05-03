@@ -3,6 +3,7 @@ using LibrarySeatTrackingAPI.Application.Interfaces; // IQrCodeRecordService int
 using LibrarySeatTrackingAPI.Domain; // QrCodeRecord entity sınıfını kullanmak için
 using LibrarySeatTrackingAPI.Infrastructure.Data; // ApplicationDbContext kullanmak için
 using Microsoft.EntityFrameworkCore; // Include, AnyAsync, ToListAsync gibi EF Core metotları için
+using QRCoder; // QR kod oluşturmak için QRCoder kütüphanesini kullanmak için
 
 namespace LibrarySeatTrackingAPI.Application.Services; // Bu dosyanın Application/Services katmanına ait olduğunu belirtir
 
@@ -156,4 +157,66 @@ public class QrCodeRecordService : IQrCodeRecordService // QrCodeRecordService, 
                 Data = response // Güncellenmiş QR kod bilgisi
             };
         }
+        public async Task<ApiResponseDto<QrCodeFileDto>> GetQrCodePngAsync(int qrCodeRecordId)
+{
+    var qrCodeRecord = await _db.QrCodeRecords
+        .Include(x => x.StudyTable)
+        .FirstOrDefaultAsync(x => x.Id == qrCodeRecordId);
+
+    if (qrCodeRecord is null)
+    {
+        return new ApiResponseDto<QrCodeFileDto>
+        {
+            Success = false,
+            Message = "QR code record not found.",
+            Data = null
+        };
+    }
+
+    if (!qrCodeRecord.IsActive)
+    {
+        return new ApiResponseDto<QrCodeFileDto>
+        {
+            Success = false,
+            Message = "QR code record is not active.",
+            Data = null
+        };
+    }
+
+    var qrPngBytes = PngByteQRCodeHelper.GetQRCode(
+        qrCodeRecord.Code,
+        QRCodeGenerator.ECCLevel.Q,
+        20
+    );
+
+    var studyTableCode = qrCodeRecord.StudyTable?.Code ?? qrCodeRecord.StudyTableId.ToString();
+
+    var safeTableCode = MakeSafeFileName(studyTableCode);
+
+    var response = new QrCodeFileDto
+    {
+        FileBytes = qrPngBytes,
+        FileName = $"table-{safeTableCode}-qr-{qrCodeRecord.Id}.png",
+        ContentType = "image/png",
+        Code = qrCodeRecord.Code,
+        StudyTableCode = studyTableCode
+    };
+
+    return new ApiResponseDto<QrCodeFileDto>
+    {
+        Success = true,
+        Message = "QR code image generated successfully.",
+        Data = response
+    };
+}
+
+private static string MakeSafeFileName(string value)
+{
+    foreach (var invalidChar in Path.GetInvalidFileNameChars())
+    {
+        value = value.Replace(invalidChar, '-');
+    }
+
+    return value.Replace(" ", "-");
+}
 }

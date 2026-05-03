@@ -9,4 +9,5 @@ public interface IQrCodeRecordService
     Task<ApiResponseDto<List<QrCodeRecordResponseDto>>> GetAllAsync(); // Tüm QR kod kayıtlarını listeler
 
     Task<ApiResponseDto<QrCodeRecordResponseDto>> UpdateStatusAsync(int qrCodeRecordId, UpdateQrCodeStatusDto request); // Admin/Staff QR kodu aktif veya pasif yapar
+    Task<ApiResponseDto<QrCodeFileDto>> GetQrCodePngAsync(int qrCodeRecordId);
 }
